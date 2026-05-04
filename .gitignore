@@ -1,0 +1,22 @@
+*.csv
+*.pdf
+*.txt
+*.png
+*.jpg
+*.docx
+*.zip
+*.ipynb
+
+# Datasets ENDUTIH (pesados, no van a GitHub)
+conjunto_de_datos_endutih_*/
+endutih_anual_*/
+graficas/
+
+# Entornos Python
+.ipynb_checkpoints/
+__pycache__/
+.env
+venv/
+
+# Claude
+.claude/

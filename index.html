@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENDUTIH — Uso de Internet</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --navy: #1B3A6B; --teal: #00B2A9; --gray: #64748B; --bg: #F1F5F9; }
+
+    body {
+      background: var(--bg);
+      font-family: Arial, sans-serif;
+      color: var(--navy);
+      height: 100vh; width: 100vw; overflow: hidden;
+    }
+    canvas { position: fixed; top: 0; left: 0; display: block; }
+
+    #header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 16px 20px; z-index: 10; pointer-events: none;
+    }
+    #title h1 {
+      font-size: clamp(13px, 1.8vw, 20px); font-weight: 900;
+      color: var(--navy); letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    #title p { font-size: 11px; color: var(--gray); margin-top: 3px; }
+
+    #ctrl {
+      background: white; border: 1px solid #E2E8F0; border-radius: 10px;
+      padding: 12px 14px; box-shadow: 0 2px 10px rgba(27,58,107,0.1);
+      min-width: 160px; pointer-events: all;
+    }
+    .ctrl-lbl {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--gray); margin-bottom: 5px;
+    }
+    select {
+      width: 100%; padding: 6px 26px 6px 8px;
+      border: 1.5px solid #CBD5E1; border-radius: 7px;
+      font-size: 13px; font-weight: 600; color: var(--navy);
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%231B3A6B' d='M0 0l5 7 5-7z'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; cursor: pointer; font-family: Arial, sans-serif;
+    }
+    select:focus { outline: none; border-color: var(--teal); }
+
+    .cl {
+      position: fixed; pointer-events: none;
+      transform: translateX(-50%); z-index: 9;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .cl-bubble {
+      background: white; border: 1.5px solid #E2E8F0;
+      border-radius: 10px; padding: 7px 14px 8px;
+      box-shadow: 0 3px 14px rgba(27,58,107,0.13);
+      text-align: center; position: relative; min-width: 88px;
+    }
+    .cl-bubble::after {
+      content: ''; position: absolute; bottom: -8px; left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 13px; height: 13px; background: white;
+      border-right: 1.5px solid #E2E8F0; border-bottom: 1.5px solid #E2E8F0;
+    }
+    .cl-name  { font-size: clamp(9px, 1vw, 12px); font-weight: 700; color: var(--navy); }
+    .cl-pct   { font-size: clamp(14px, 1.6vw, 19px); font-weight: 900; color: var(--teal); margin-top: 1px; }
+    .cl-count { font-size: 9px; color: #94A3B8; margin-top: 2px; }
+    .cl-pop   { font-size: 9px; color: #CBD5E1; margin-top: 1px; border-top: 1px solid #F1F5F9; padding-top: 3px; }
+
+    #bottom {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 22px 24px 16px;
+      background: linear-gradient(to top, rgba(241,245,249,0.98) 55%, transparent);
+      z-index: 10;
+    }
+    #yr-track {
+      display: flex; justify-content: center; align-items: center;
+      gap: 5px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    #play-btn, #explore-btn {
+      color: white; border: none;
+      padding: 6px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 12px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #play-btn    { background: var(--teal); }
+    #explore-btn { background: var(--navy); }
+    .yr {
+      background: white; color: var(--gray); border: 1.5px solid #CBD5E1;
+      padding: 4px 12px; border-radius: 14px; cursor: pointer;
+      font-size: 12px; font-family: Arial, sans-serif; transition: all 0.15s;
+    }
+    .yr:hover { border-color: var(--teal); color: var(--navy); }
+    .yr.on { background: var(--navy); color: white; border-color: var(--navy); font-weight: 700; }
+
+    #legend { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .li { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray); }
+    .ld { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    #tip {
+      position: fixed; background: white; border: 1px solid #E2E8F0;
+      border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--navy);
+      pointer-events: none; display: none; z-index: 20;
+      box-shadow: 0 4px 14px rgba(27,58,107,0.13);
+    }
+    #note {
+      position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; color: #64748B; white-space: nowrap;
+      pointer-events: none; z-index: 8;
+      background: white; border: 1px solid #E2E8F0;
+      border-radius: 20px; padding: 5px 14px;
+      box-shadow: 0 2px 8px rgba(27,58,107,0.08);
+    }
+    #yr-big {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      font-size: clamp(32px, 5vw, 56px); font-weight: 900; letter-spacing: 0.04em;
+      color: var(--navy); opacity: 0.13;
+      pointer-events: none; z-index: 11; line-height: 1;
+      padding-top: 10px;
+    }
+
+    /* ── Botones extra ─────────────────────────────────────────── */
+    #graficas-btn {
+      background: #7C3AED; color: white; border: none;
+      padding: 6px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 12px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #next-phase-btn {
+      background: var(--teal); color: white; border: none;
+      padding: 6px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 12px; font-weight: 700; font-family: Arial, sans-serif;
+      display: none;
+    }
+    #phase-indicator {
+      display: none; align-items: center; gap: 5px;
+      background: white; border: 1px solid #E2E8F0;
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 9px; color: var(--gray); pointer-events: none;
+    }
+    .ph-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      background: #CBD5E1; transition: background 0.3s, transform 0.3s;
+    }
+    .ph-dot.active { background: var(--navy); transform: scale(1.5); }
+
+    /* ── Panel de Gráficas ─────────────────────────────────────── */
+    #graficas-panel {
+      position: fixed; inset: 0; z-index: 30;
+      background: #F1F5F9;
+      display: none; flex-direction: column;
+    }
+    #graficas-panel.gp-on { display: flex; }
+
+    #gp-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 22px; flex-shrink: 0;
+      background: var(--navy); color: white;
+    }
+    #gp-hdr-title {
+      font-size: clamp(11px, 1.5vw, 17px); font-weight: 900;
+      letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    #gp-hdr-sub  { font-size: 10px; opacity: 0.6; margin-top: 1px; }
+    #gp-close-btn {
+      background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3);
+      color: white; border-radius: 20px; padding: 4px 14px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #gp-close-btn:hover { background: rgba(255,255,255,0.28); }
+
+    /* ── Sistema de slides ─────────────────────────────────────── */
+    #gp-slides { flex: 1; position: relative; overflow: hidden; }
+    .gp-slide {
+      position: absolute; inset: 0; display: none; flex-direction: column;
+      padding: 10px 28px 6px; background: #F8FAFC;
+    }
+    .gp-slide.active { display: flex; }
+    .gp-slide-title {
+      font-size: clamp(14px, 1.8vw, 24px); font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy);
+      margin-bottom: 10px; flex-shrink: 0; text-align: center;
+    }
+    #gp-line-container { flex: 1; overflow: hidden; min-height: 0; }
+    #gp-line-container svg { display: block; width: 100%; height: 100%; }
+
+    /* Barras grandes (full-screen) */
+    .gp-bars-big {
+      flex: 1; display: flex; align-items: stretch; justify-content: center;
+      gap: clamp(8px, 2.5vw, 56px); padding: 0 16px 8px; min-height: 0;
+    }
+    .gp-bar-big-col {
+      display: flex; flex-direction: column; align-items: center;
+      flex: 1; max-width: 320px; min-width: 0;
+    }
+    .gp-bar-big-track {
+      width: 78%; flex: 1; min-height: 80px;
+      display: flex; align-items: flex-end;
+      border-bottom: 2px solid #CBD5E1;
+    }
+    /* Wrapper que agrupa val + fill — crece desde abajo */
+    .gp-bar-big-bar {
+      width: 100%; display: flex; flex-direction: column; align-items: center;
+    }
+    .gp-bar-big-val {
+      font-size: clamp(16px, 2.4vw, 34px); font-weight: 900; color: var(--navy);
+      margin-bottom: 6px; opacity: 0; transition: opacity 0.4s;
+      white-space: nowrap;
+    }
+    .gp-bar-big-fill {
+      width: 100%; height: 0; border-radius: 8px 8px 0 0;
+      transition: height 1.1s cubic-bezier(.4,0,.2,1);
+    }
+    .gp-bar-big-lbl {
+      font-size: clamp(11px, 1.2vw, 16px); color: var(--gray);
+      text-align: center; margin-top: 8px; line-height: 1.3; flex-shrink: 0;
+    }
+
+    /* Slides de blobs */
+    .gp-blob-grid {
+      flex: 1; display: flex; align-items: stretch; justify-content: center;
+      gap: clamp(20px, 4vw, 72px); padding: 0 20px 8px; min-height: 0;
+    }
+    .gp-blob-col {
+      display: flex; flex-direction: column; align-items: center;
+      flex: 1; max-width: 300px; min-width: 0;
+    }
+    .gp-blob-header {
+      display: flex; flex-direction: column; align-items: center;
+      flex-shrink: 0; gap: 4px; margin-bottom: 6px;
+    }
+    .gp-blob-icon {
+      font-size: clamp(20px, 3vw, 44px);
+      line-height: 1; flex-shrink: 0;
+    }
+    .gp-blob-cells {
+      flex: 1; min-height: 0; width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: clamp(6px, 1vw, 16px);
+      justify-items: center;
+      align-items: center;
+    }
+    .gp-blob-cell {
+      width: 18px; height: 25px;       /* tamaño base; el JS lo sobreescribe */
+      border-radius: 50% 50% 44% 44% / 56% 56% 38% 38%;
+      background: #D1D5DB;
+      transition: background 0.38s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.11);
+      position: relative;
+    }
+    .gp-blob-cell.on { background: var(--blob-col, var(--teal)); }
+    .gp-blob-cell::before,
+    .gp-blob-cell::after {
+      content: ''; position: absolute;
+      width: 18%; height: 16%;
+      background: rgba(27,58,107,0.35);
+      border-radius: 50%; top: 30%;
+    }
+    .gp-blob-cell::before { left: 19%; }
+    .gp-blob-cell::after  { right: 19%; }
+    .gp-blob-cell.on::before,
+    .gp-blob-cell.on::after { background: rgba(255,255,255,0.65); }
+    .gp-blob-pct {
+      font-size: clamp(15px, 2.2vw, 30px); font-weight: 900; color: var(--navy);
+      margin-top: 5px; flex-shrink: 0; transition: opacity 0.4s;
+    }
+    .gp-blob-lbl {
+      font-size: clamp(10px, 1.1vw, 14px); font-weight: 600; color: var(--navy);
+      text-align: center; line-height: 1.2; flex-shrink: 0;
+    }
+
+    .ap-blob-note {
+      text-align: center; flex-shrink: 0;
+      font-size: clamp(10px, 1.1vw, 14px); color: var(--gray);
+      padding: 6px 0 2px;
+      border-top: 1px solid #E8ECF2; margin-top: 2px;
+    }
+    .ap-blob-note strong { color: var(--navy); }
+
+    /* ── Panel Alpha ───────────────────────────────────────────── */
+    #alpha-panel {
+      position: fixed; inset: 0; z-index: 30;
+      background: #F1F5F9;
+      display: none; flex-direction: column;
+    }
+    #alpha-panel.ap-on { display: flex; }
+    #ap-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 22px; flex-shrink: 0;
+      background: #E84B4B; color: white;
+    }
+    #ap-hdr-title {
+      font-size: clamp(11px, 1.5vw, 17px); font-weight: 900;
+      letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    #ap-hdr-sub { font-size: 10px; opacity: 0.7; margin-top: 1px; }
+    #ap-close-btn {
+      background: rgba(255,255,255,0.18); border: 1.5px solid rgba(255,255,255,0.35);
+      color: white; border-radius: 20px; padding: 4px 14px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #ap-close-btn:hover { background: rgba(255,255,255,0.30); }
+    #ap-slides { flex: 1; position: relative; overflow: hidden; }
+    .ap-slide {
+      position: absolute; inset: 0; display: none; flex-direction: column;
+      padding: 10px 28px 6px; background: #FFF8F8;
+    }
+    .ap-slide.active { display: flex; }
+    #ap-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 18px; padding: 10px 0 14px; flex-shrink: 0;
+    }
+    #ap-dots { display: flex; gap: 10px; align-items: center; }
+    #alpha-btn {
+      background: #E84B4B; color: white; border: none;
+      padding: 6px 16px; border-radius: 20px; cursor: pointer;
+      font-size: 12px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #ap-auto-btn {
+      background: #E84B4B; color: white; border: none;
+      border-radius: 20px; padding: 6px 15px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #ap-auto-btn:hover { filter: brightness(1.12); }
+    #ap-explore-btn {
+      background: var(--navy); color: white; border: none;
+      border-radius: 20px; padding: 6px 15px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #ap-explore-btn:hover { background: #274e8a; }
+
+    /* Navegación slides */
+    #gp-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 18px; padding: 10px 0 14px; flex-shrink: 0;
+    }
+    .gp-nav-btn {
+      background: var(--navy); color: white; border: none;
+      border-radius: 50%; width: 38px; height: 38px;
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.18s;
+    }
+    .gp-nav-btn:hover { background: var(--teal); }
+    #gp-dots { display: flex; gap: 10px; align-items: center; }
+    .gp-dot {
+      width: 11px; height: 11px; border-radius: 50%; background: #CBD5E1;
+      transition: background 0.3s, transform 0.3s; cursor: pointer;
+    }
+    .gp-dot.active { background: var(--navy); transform: scale(1.45); }
+    .gp-nav-sep { width: 1px; height: 26px; background: #D1D5DB; margin: 0 2px; }
+    #gp-auto-btn {
+      background: var(--teal); color: white; border: none;
+      border-radius: 20px; padding: 6px 15px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #gp-auto-btn:hover { filter: brightness(1.12); }
+    #gp-explore-btn2 {
+      background: var(--navy); color: white; border: none;
+      border-radius: 20px; padding: 6px 15px;
+      cursor: pointer; font-size: 11px; font-weight: 700; font-family: Arial, sans-serif;
+    }
+    #gp-explore-btn2:hover { background: #274e8a; }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE — teléfonos (≤ 640 px)
+       ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+
+      /* ── Header ─────────────────────────────────────────────── */
+      #header { padding: 8px 10px; align-items: center; gap: 6px; }
+      #title h1 { font-size: 11px; letter-spacing: 0.03em; }
+      #title p  { font-size: 9px; }
+      #ctrl { min-width: 0; padding: 6px 9px; }
+      #ctrl .ctrl-lbl { display: none; }
+      #ctrl select { font-size: 11px; padding: 5px 22px 5px 7px; }
+
+      /* Etiquetas flotantes — demasiado pequeñas en móvil */
+      #labels { display: none; }
+
+      /* Nota del pie */
+      #note { display: none; }
+
+      /* ── Barra inferior ─────────────────────────────────────── */
+      #bottom { padding: 8px 8px 6px; }
+      #yr-track { gap: 3px; margin-bottom: 6px; }
+      #play-btn, #explore-btn,
+      #graficas-btn, #alpha-btn,
+      #next-phase-btn { padding: 5px 9px; font-size: 10px; }
+      .yr { padding: 3px 7px; font-size: 10px; border-radius: 11px; }
+      #legend { gap: 5px; }
+      .li { font-size: 9px; }
+      .ld { width: 8px; height: 8px; }
+      #phase-indicator { padding: 3px 7px; gap: 3px; font-size: 8px; }
+      .ph-dot { width: 6px; height: 6px; }
+
+      /* ── Encabezados de paneles ─────────────────────────────── */
+      #gp-hdr, #ap-hdr { padding: 8px 12px; }
+      #gp-hdr-sub, #ap-hdr-sub { display: none; }
+      #gp-hdr-title, #ap-hdr-title { font-size: 12px; letter-spacing: 0.03em; }
+      #gp-close-btn, #ap-close-btn { padding: 4px 10px; font-size: 10px; }
+
+      /* ── Contenido de slides ────────────────────────────────── */
+      .gp-slide { padding: 8px 10px 4px; }
+      .ap-slide { padding: 8px 10px 4px; }
+      .gp-slide-title {
+        font-size: 10px; letter-spacing: 0.02em;
+        margin-bottom: 6px; line-height: 1.3;
+      }
+
+      /* ── Barras grandes → 3 columnas en 2 filas ─────────────── */
+      .gp-bars-big {
+        flex-wrap: wrap; gap: 6px;
+        padding: 0 4px 4px; align-content: flex-start;
+      }
+      .gp-bar-big-col {
+        min-width: calc(33.3% - 5px); max-width: none; flex: 1 1 30%;
+      }
+      .gp-bar-big-val { font-size: clamp(11px, 4vw, 18px); margin-bottom: 3px; }
+      .gp-bar-big-lbl { font-size: 9px; margin-top: 4px; }
+      .gp-bar-big-track { min-height: 60px; }
+
+      /* ── Blob grid → scroll horizontal ─────────────────────── */
+      .gp-blob-grid {
+        overflow-x: auto; flex-wrap: nowrap;
+        gap: 8px; padding: 0 8px 6px;
+        align-items: flex-start;
+        -webkit-overflow-scrolling: touch;
+      }
+      .gp-blob-col  { min-width: 72px; flex-shrink: 0; }
+      .gp-blob-icon { font-size: 16px; }
+      .gp-blob-lbl  { font-size: 8px; }
+      .gp-blob-pct  { font-size: 12px; margin-top: 2px; }
+      .ap-blob-note { font-size: 9px; padding: 4px 0 1px; }
+
+      /* ── Navegación de paneles ──────────────────────────────── */
+      #gp-nav, #ap-nav {
+        gap: 8px; padding: 6px 8px 10px; flex-wrap: wrap;
+      }
+      .gp-nav-btn { width: 30px; height: 30px; font-size: 12px; }
+      .gp-nav-sep { display: none; }
+      #gp-auto-btn, #gp-explore-btn2,
+      #ap-auto-btn, #ap-explore-btn {
+        padding: 5px 9px; font-size: 10px;
+      }
+      #gp-dots, #ap-dots { gap: 7px; }
+      .gp-dot { width: 9px; height: 9px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="title">
+    <h1>Uso de Internet · ENDUTIH</h1>
+    <p>México 2016–2024 · Año: <strong id="yr-lbl">2024</strong></p>
+  </div>
+  <div id="ctrl">
+    <div class="ctrl-lbl">Agrupar por</div>
+    <select id="sch-sel">
+      <option value="3" selected>Sin agrupar</option>
+      <option value="0">Generación</option>
+      <option value="1">Grupo de Edad</option>
+      <option value="2">Sexo</option>
+    </select>
+  </div>
+</div>
+
+<div id="yr-big">2024</div>
+<canvas id="canvas"></canvas>
+<div id="labels"></div>
+<div id="tip"></div>
+<div id="note">
+  <span style="color:var(--teal)">●</span> Usa internet &nbsp;
+  <span style="color:#CBD5E1">●</span> No usa internet &nbsp;·&nbsp;
+  Cada figura = segmento de la población
+</div>
+
+<div id="bottom">
+  <div id="yr-track">
+    <button id="play-btn">▶ Auto</button>
+    <button id="explore-btn">◎ Explorar</button>
+    <button id="graficas-btn">Gráficas</button>
+    <button id="alpha-btn">Alpha</button>
+    <div id="phase-indicator">
+      <span class="ph-dot" id="ph0"></span>
+      <span style="font-size:9px;color:#94A3B8">Blobs</span>
+      <span style="color:#CBD5E1">›</span>
+      <span class="ph-dot" id="ph1"></span>
+      <span style="font-size:9px;color:#94A3B8">Gráficas</span>
+      <span style="color:#CBD5E1">›</span>
+      <span class="ph-dot" id="ph2"></span>
+      <span style="font-size:9px;color:#94A3B8">Alpha</span>
+    </div>
+    <button id="next-phase-btn">→ Gráficas</button>
+  </div>
+  <div id="legend"></div>
+</div>
+
+<!-- ── Panel Alpha ────────────────────────────────────────── -->
+<div id="alpha-panel">
+  <div id="ap-hdr">
+    <div>
+      <div id="ap-hdr-title">Generación Alpha · ENDUTIH 2024</div>
+      <div id="ap-hdr-sub">Cada figura = 5% de la Generación Alpha · México · INEGI</div>
+    </div>
+    <button id="ap-close-btn">✕ Cerrar</button>
+  </div>
+  <div id="ap-slides">
+    <div class="ap-slide active" id="ap-slide-0">
+      <div class="gp-slide-title">Para qué usa internet · Generación Alpha 2024</div>
+      <div class="gp-blob-grid" id="ap-blobs-uso"></div>
+      <div class="ap-blob-note">🫧 Cada figura representa el <strong>5%</strong> de la Generación Alpha</div>
+    </div>
+    <div class="ap-slide" id="ap-slide-1">
+      <div class="gp-slide-title">Equipo de cómputo más utilizado · Generación Alpha 2024</div>
+      <div class="gp-blob-grid" id="ap-blobs-equipo"></div>
+      <div class="ap-blob-note">🫧 Cada figura representa el <strong>5%</strong> de la Generación Alpha</div>
+    </div>
+    <div class="ap-slide" id="ap-slide-2">
+      <div class="gp-slide-title">¿Cómo aprendió a usar la computadora? · Generación Alpha 2024</div>
+      <div class="gp-blob-grid" id="ap-blobs-aprend"></div>
+      <div class="ap-blob-note">🫧 Cada figura representa el <strong>5%</strong> de la Generación Alpha</div>
+    </div>
+  </div>
+  <div id="ap-nav">
+    <button class="gp-nav-btn" id="ap-prev">◀</button>
+    <div id="ap-dots">
+      <div class="gp-dot active" data-ap="0"></div>
+      <div class="gp-dot" data-ap="1"></div>
+      <div class="gp-dot" data-ap="2"></div>
+    </div>
+    <button class="gp-nav-btn" id="ap-next">▶</button>
+    <div class="gp-nav-sep"></div>
+    <button id="ap-auto-btn">▶ Auto</button>
+    <button id="ap-explore-btn">◎ Explorar</button>
+  </div>
+</div>
+
+<!-- ── Panel de Gráficas ──────────────────────────────────── -->
+<div id="graficas-panel">
+  <div id="gp-hdr">
+    <div>
+      <div id="gp-hdr-title">Personas usuarias de internet · ENDUTIH 2016–2024</div>
+      <div id="gp-hdr-sub">Generación Alpha · México · INEGI</div>
+    </div>
+    <button id="gp-close-btn">✕ Cerrar</button>
+  </div>
+  <!-- Slides de gráficas -->
+  <div id="gp-slides">
+    <div class="gp-slide active" id="gp-slide-0">
+      <div class="gp-slide-title">Uso de internet por generación · México 2016–2024</div>
+      <div id="gp-line-container"></div>
+    </div>
+    <div class="gp-slide" id="gp-slide-1">
+      <div class="gp-slide-title">Para qué usa internet · Generación Alpha 2024</div>
+      <div class="gp-bars-big" id="gp-bars-uso"></div>
+    </div>
+    <div class="gp-slide" id="gp-slide-2">
+      <div class="gp-slide-title">Equipo de cómputo más utilizado · Generación Alpha 2024</div>
+      <div class="gp-bars-big" id="gp-bars-equipo"></div>
+    </div>
+    <div class="gp-slide" id="gp-slide-3">
+      <div class="gp-slide-title">¿Cómo aprendió a usar computadora? · Generación Alpha 2024</div>
+      <div class="gp-bars-big" id="gp-bars-aprend"></div>
+    </div>
+  </div>
+  <!-- Navegación -->
+  <div id="gp-nav">
+    <button class="gp-nav-btn" id="gp-prev">◀</button>
+    <div id="gp-dots">
+      <div class="gp-dot active" data-i="0"></div>
+      <div class="gp-dot" data-i="1"></div>
+      <div class="gp-dot" data-i="2"></div>
+      <div class="gp-dot" data-i="3"></div>
+    </div>
+    <button class="gp-nav-btn" id="gp-next">▶</button>
+    <div class="gp-nav-sep"></div>
+    <button id="gp-auto-btn">▶ Auto</button>
+    <button id="gp-explore-btn2">◎ Explorar</button>
+  </div>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATOS REALES — ENDUTIH 2016-2024 (FAC_PER weighted, P7_1==1)
+// ═══════════════════════════════════════════════════════════════
+const YEARS = [2016,2017,2018,2019,2020,2021,2022,2023,2024];
+
+const SCHEMES = [
+  {
+    id:'gen', label:'Generación',
+    groups:['Silenciosa','Baby Boomers','Gen X','Millennials','Gen Z','Alpha'],
+    colors:['#7A8FA6','#6B7280','#F5A623','#3B82F6','#00B2A9','#E84B4B'],
+    layout:[3,2],
+    n:{
+      'Silenciosa':   [ 5,  5,  5,  5,  4,  4,  4,  4,  3],
+      'Baby Boomers': [13, 13, 13, 13, 12, 12, 11, 11, 10],
+      'Gen X':        [21, 21, 21, 21, 20, 20, 19, 19, 18],
+      'Millennials':  [24, 24, 23, 23, 22, 22, 21, 21, 20],
+      'Gen Z':        [25, 25, 24, 23, 22, 21, 20, 20, 19],
+      'Alpha':        [ 0,  0,  0,  4,  8, 12, 15, 18, 22],
+    },
+    // millones de personas por grupo (estimado INEGI 6+)
+    pop:{
+      'Silenciosa':   [4.5, 4.3, 4.1, 3.9, 3.7, 3.5, 3.3, 3.1, 2.9],
+      'Baby Boomers': [16,  16,  15.5,15,  14.5,14,  14,  13,  13 ],
+      'Gen X':        [27,  27,  27,  26,  25,  25,  24,  24,  23 ],
+      'Millennials':  [32,  32,  31,  30,  29,  29,  28,  27,  26 ],
+      'Gen Z':        [33,  33,  33,  32,  31,  30,  30,  29,  28 ],
+      'Alpha':        [0,   0,   0,   4,   6,   8,   10,  12,  14 ],
+    },
+    pct:{
+      'Silenciosa':   [10.8, 7.2,10.0,12.3,13.2,15.6,18.3,23.8,27.8],
+      'Baby Boomers': [28.7,31.7,34.9,40.2,41.7,45.5,48.5,53.4,54.6],
+      'Gen X':        [54.7,60.9,63.1,69.8,69.7,73.0,77.7,81.3,81.6],
+      'Millennials':  [76.8,80.9,81.4,85.6,84.6,87.9,90.9,92.1,93.6],
+      'Gen Z':        [72.1,75.2,77.0,80.4,85.6,89.5,91.9,94.1,96.1],
+      'Alpha':        [ 0.0, 0.0, 0.0,52.5,58.4,69.1,68.7,69.0,79.7],
+    },
+  },
+  {
+    id:'age', label:'Grupo de Edad',
+    groups:['6-11','12-17','18-24','25-34','35-44','45-54','55-64','65+'],
+    colors:['#E84B4B','#F5A623','#00B2A9','#2563EB','#8B5CF6','#EC4899','#94A3B8','#6B7280'],
+    layout:[4,2],
+    pop:{
+      '6-11':  [13,  13,  12.5,12,  11.5,11,  11,  10.5,10 ],
+      '12-17': [12,  12,  12,  12,  12,  11.5,11.5,11,  11 ],
+      '18-24': [14,  14,  14,  14,  13.5,13,  13,  13,  12.5],
+      '25-34': [20,  20,  20,  20,  20,  20,  19.5,19,  19 ],
+      '35-44': [17,  17,  17,  17,  17,  17,  17,  16.5,16.5],
+      '45-54': [14,  14,  14,  14,  14,  14,  14,  14,  14 ],
+      '55-64': [11,  11,  11,  11.5,11.5,12,  12,  12,  12 ],
+      '65+':   [9,   9,   9.5, 10,  10,  10.5,11,  11,  11.5],
+    },
+    pct:{
+      '6-11':  [52.9,54.6,56.7,59.7,67.8,74.9,72.1,71.4,79.7],
+      '12-17': [85.5,87.5,88.1,87.6,89.7,90.0,92.4,92.4,95.1],
+      '18-24': [84.8,87.9,89.1,90.9,90.2,93.4,95.1,96.7,97.0],
+      '25-34': [74.0,79.9,81.7,86.5,86.5,90.0,92.8,94.1,95.1],
+      '35-44': [60.0,67.3,69.6,78.9,77.9,82.7,87.1,89.7,92.3],
+      '45-54': [45.2,53.1,57.7,65.2,68.0,71.7,77.9,82.3,83.8],
+      '55-64': [30.0,34.6,39.6,50.5,50.1,56.6,62.3,69.2,71.0],
+      '65+':   [12.8,12.3,16.6,17.4,24.0,28.3,33.2,39.2,42.1],
+    },
+  },
+  {
+    id:'sex', label:'Sexo',
+    groups:['Hombre','Mujer'],
+    colors:['#00B2A9','#6366F1'],
+    layout:[2,1],
+    pop:{
+      'Hombre': [53,  54,  55,  56,  57,  57,  58,  59,  61 ],
+      'Mujer':  [55,  56,  57,  58,  59,  60,  60,  61,  63 ],
+    },
+    pct:{
+      'Hombre': [61.1,64.9,67.0,71.4,72.3,76.5,79.3,81.0,84.1],
+      'Mujer':  [57.9,62.6,64.2,68.1,70.8,74.8,78.1,81.4,82.3],
+    },
+  },
+  {
+    id:'none', label:'Sin agrupar',
+    groups:[], colors:[], layout:[1,1], pct:{},
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// SCENE
+// ═══════════════════════════════════════════════════════════════
+const canvas   = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0xF1F5F9);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(0, 13, 17);
+camera.lookAt(0, 0, 0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+sun.position.set(6, 16, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left   = -22; sun.shadow.camera.right = 22;
+sun.shadow.camera.top    =  20; sun.shadow.camera.bottom = -20;
+sun.shadow.camera.far    = 60;
+sun.shadow.bias = -0.001;
+scene.add(sun);
+
+const fill = new THREE.DirectionalLight(0xcce4ff, 0.4);
+fill.position.set(-5, 5, -4);
+scene.add(fill);
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 28),
+  new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.92 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const rim = new THREE.Mesh(
+  new THREE.BoxGeometry(40, 0.2, 28),
+  new THREE.MeshStandardMaterial({ color: 0xDDE3ED, roughness: 0.95 })
+);
+rim.position.y = -0.1;
+scene.add(rim);
+
+// ═══════════════════════════════════════════════════════════════
+// BLOBS
+// ═══════════════════════════════════════════════════════════════
+const _bGeo = new THREE.SphereGeometry(0.44, 14, 10);
+const _eGeo = new THREE.SphereGeometry(0.07, 8, 8);
+const _eMat = new THREE.MeshStandardMaterial({ color: 0x1B3A6B, roughness: 0.3 });
+const GRAY  = new THREE.Color(0xD1D5DB);
+
+function makeBlob() {
+  const g   = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: GRAY.clone(), roughness: 0.78 });
+  const body = new THREE.Mesh(_bGeo, mat);
+  body.scale.set(1.0, 1.26, 0.90);
+  body.castShadow = true;
+  g.add(body);
+  const eL = new THREE.Mesh(_eGeo, _eMat);
+  eL.position.set(-0.17, 0.17, 0.39);
+  g.add(eL);
+  const eR = new THREE.Mesh(_eGeo, _eMat);
+  eR.position.set( 0.17, 0.17, 0.39);
+  g.add(eR);
+  g.userData.mat = mat;
+  return g;
+}
+
+function ageOfGen(gi) {
+  const r = [[6,7],[5,7],[4,6],[2,4],[1,3],[0,0]][gi];
+  return r[0] + Math.floor(Math.random() * (r[1]-r[0]+1));
+}
+
+const N = 25;
+const blobs = [];
+
+for (let gi = 0; gi < 6; gi++) {
+  for (let i = 0; i < N; i++) {
+    const g = makeBlob();
+    const rx = (Math.random()-0.5)*22;
+    const rz = (Math.random()-0.5)*14;
+    g.position.set(rx, 0.5, rz);
+    scene.add(g);
+    blobs.push({
+      g, gi,
+      age: ageOfGen(gi),
+      sex: Math.random() < 0.5 ? 0 : 1,
+      px:rx, py:0.5, pz:rz,
+      tx:rx, ty:0.5, tz:rz,
+      phase: Math.random() * Math.PI * 2,
+      cur: GRAY.clone(),
+      tgt: GRAY.clone(),
+      scaleNow: 1, scaleTgt: 1,
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLUSTER LAYOUT
+// ═══════════════════════════════════════════════════════════════
+function getCenters(scheme) {
+  const [cols, rows] = scheme.layout;
+  const n  = scheme.groups.length;
+  const xs = cols > 1 ? Math.min(20, (cols-1)*8) : 0;
+  const zs = rows > 1 ? 7 : 0;
+  const out = [];
+  for (let r = 0; r < rows && out.length < n; r++)
+    for (let c = 0; c < cols && out.length < n; c++)
+      out.push({ x: cols>1 ? -xs/2+c*(xs/(cols-1)) : 0,
+                 z: rows>1 ? -zs/2+r*zs : 0 });
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LABELS
+// ═══════════════════════════════════════════════════════════════
+const labDiv = document.getElementById('labels');
+let labelEls = [], centers = [];
+
+function rebuildLabels(sc) {
+  labelEls.forEach(e => e.remove());
+  labelEls = sc.groups.map(name => {
+    const el = document.createElement('div');
+    el.className = 'cl';
+    el.innerHTML = `
+      <div class="cl-bubble">
+        <div class="cl-name">${name}</div>
+        <div class="cl-pct">—</div>
+        <div class="cl-count">—</div>
+        <div class="cl-pop">—</div>
+      </div>`;
+    labDiv.appendChild(el);
+    return el;
+  });
+}
+
+function updatePcts(sc, yi) {
+  sc.groups.forEach((name, i) => {
+    const pctVal  = sc.pct[name]?.[yi] ?? 0;
+    const nVis    = sc.n   ? (sc.n[name]?.[yi]   ?? N) : N;
+    const popM    = sc.pop ? (sc.pop[name]?.[yi]  ?? 0) : 0;
+    const nOn     = Math.round(pctVal / 100 * nVis);
+    const perBlob = nVis > 0 ? (popM / nVis).toFixed(1) : '—';
+    const pctEl  = labelEls[i]?.querySelector('.cl-pct');
+    const cntEl  = labelEls[i]?.querySelector('.cl-count');
+    const popEl  = labelEls[i]?.querySelector('.cl-pop');
+    if (pctEl) pctEl.textContent = `${pctVal.toFixed(1)}%`;
+    if (cntEl) cntEl.textContent = nVis > 0
+      ? `${nOn} de ${nVis} figuras usan internet`
+      : 'Sin datos este año';
+    if (popEl) popEl.textContent = nVis > 0
+      ? `≈ ${perBlob}M hab. / figura`
+      : '';
+  });
+}
+
+function posLabels() {
+  centers.forEach((c, i) => {
+    if (!labelEls[i]) return;
+    const v = new THREE.Vector3(c.x, 3.5, c.z).project(camera);
+    labelEls[i].style.left = `${( v.x*0.5+0.5)*innerWidth}px`;
+    labelEls[i].style.top  = `${(-v.y*0.5+0.5)*innerHeight - 8}px`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEGEND
+// ═══════════════════════════════════════════════════════════════
+function rebuildLegend(sc) {
+  const src = sc.id === 'none' ? SCHEMES[0] : sc;
+  document.getElementById('legend').innerHTML = src.groups.map((n,i) =>
+    `<div class="li"><div class="ld" style="background:${src.colors[i]}"></div><span>${n}</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOGIC
+// ═══════════════════════════════════════════════════════════════
+let schIdx = 0, yrIdx = YEARS.length - 1;
+let playing = false, timer = null;
+
+function gi_for(blob, sc) {
+  const raw = sc.id==='gen' ? blob.gi : sc.id==='age' ? blob.age : blob.sex;
+  return Math.min(raw, sc.groups.length - 1);
+}
+
+function applyScheme(idx) {
+  schIdx = idx;
+  const sc = SCHEMES[idx];
+
+  if (sc.id === 'none') {
+    centers = [];
+    blobs.forEach(b => {
+      b.scaleTgt = 1;
+      b.tgt.set('#B8C4CE');
+      b.wanderAt = 0;
+    });
+    rebuildLabels(sc);
+    rebuildLegend(sc);
+    return;
+  }
+
+  centers = getCenters(sc);
+  const counts = new Array(sc.groups.length).fill(0);
+  blobs.forEach(b => {
+    const gi  = gi_for(b, sc);
+    const c   = centers[gi];
+    const k   = counts[gi]++;
+    const ang = k * 2.399;
+    const r   = Math.sqrt(k) * 0.52;
+    b.tx = c.x + Math.cos(ang) * r;
+    b.ty = 0.5;
+    b.tz = c.z + Math.sin(ang) * r;
+    b.wanderAt = undefined;
+  });
+
+  rebuildLabels(sc);
+  rebuildLegend(sc);
+  updateActive(sc, yrIdx);
+}
+
+function updateActive(sc, yi) {
+  if (sc.id === 'none') return;
+  const byG = {};
+  blobs.forEach(b => {
+    const gi = gi_for(b, sc);
+    (byG[gi] = byG[gi] || []).push(b);
+  });
+  Object.entries(byG).forEach(([gi, list]) => {
+    gi = +gi;
+    const name = sc.groups[gi];
+    const pct  = sc.pct[name]?.[yi] ?? 0;
+    const nVis = sc.n ? (sc.n[name]?.[yi] ?? list.length) : list.length;
+    const nOn  = Math.round(pct / 100 * nVis);
+    const col  = sc.colors[gi];
+    list.forEach((b, i) => {
+      b.scaleTgt = i < nVis ? 1 : 0;
+      b.tgt.set(i < nOn ? col : '#D1D5DB');
+    });
+  });
+  updatePcts(sc, yi);
+}
+
+function setYear(yi) {
+  yrIdx = yi;
+  document.getElementById('yr-lbl').textContent = YEARS[yi];
+  document.getElementById('yr-big').textContent  = YEARS[yi];
+  document.querySelectorAll('.yr').forEach((b,i) => b.classList.toggle('on', i===yi));
+  updateActive(SCHEMES[schIdx], yi);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('sch-sel').onchange = e => {
+  stopExplore();
+  applyScheme(+e.target.value);
+};
+
+const yrTrack = document.getElementById('yr-track');
+const playBtn = document.getElementById('play-btn');
+YEARS.forEach((yr, i) => {
+  const b = document.createElement('button');
+  b.className = 'yr'; b.textContent = yr;
+  b.onclick = () => { stopPlay(); stopExplore(); setYear(i); };
+  yrTrack.appendChild(b);
+});
+
+playBtn.onclick = () => {
+  stopExplore();
+  playing ? stopPlay() : startPlay();
+};
+
+function startPlay() {
+  playing = true; playBtn.textContent = '⏸ Pausa';
+  if (yrIdx >= YEARS.length-1) setYear(0);
+  timer = setInterval(() => {
+    setYear((yrIdx + 1) % YEARS.length);
+  }, 1300);
+}
+function stopPlay() {
+  playing = false; playBtn.textContent = '▶ Auto';
+  clearInterval(timer);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATOS GRÁFICAS ALPHA (valores exactos de las capturas)
+// ═══════════════════════════════════════════════════════════════
+const ALPHA_USO = [
+  { label:'Entretenimiento', pct:91.2, color:'#1B3A6B', icon:'🎬' },
+  { label:'Educación',       pct:89.2, color:'#1B3A6B', icon:'📚' },
+  { label:'Información',     pct:82.0, color:'#1B3A6B', icon:'🔍' },
+  { label:'Comunicación',    pct:59.0, color:'#00B2A9', icon:'💬' },
+  { label:'Juegos en línea', pct:57.0, color:'#00B2A9', icon:'🎮' },
+  { label:'Lectura',         pct:19.9, color:'#00B2A9', icon:'📖' },
+];
+const ALPHA_EQUIPO = [
+  { label:'Tablet',     pct:62.6, color:'#1B3A6B', icon:'📱' },
+  { label:'Escritorio', pct:30.3, color:'#00B2A9', icon:'🖥️' },
+  { label:'Laptop',     pct:28.4, color:'#00B2A9', icon:'💻' },
+];
+const ALPHA_APREND = [
+  { label:'Con conocidos', pct:46.9, color:'#1B3A6B', icon:'👨‍👩‍👧' },
+  { label:'Cuenta propia', pct:38.4, color:'#1B3A6B', icon:'💡' },
+  { label:'En la escuela', pct:26.5, color:'#1B3A6B', icon:'🏫' },
+  { label:'Otros',         pct: 1.2, color:'#00B2A9', icon:'🔄' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// PANEL GRÁFICAS — SISTEMA DE SLIDES
+// ═══════════════════════════════════════════════════════════════
+let graficasOpen   = false;
+let gpCurrentSlide = 0;
+let gpLineProgress = 0;
+let gpLineRAF      = null;
+let _gpRefs        = null;
+let gpAutoPlaying  = false;
+let gpAutoTimer    = null;
+
+const GP_EVENTS = {
+  4: { label: ['Pandemia', 'COVID-19'],       color: '#E84B4B' },
+  6: { label: ['Regreso a la', 'normalidad'], color: '#F5A623' },
+  7: { label: ['Lanzamiento', 'ChatGPT'],     color: '#7C3AED' },
+};
+
+// ── Abrir / cerrar panel ──────────────────────────────────────
+function gpSetOpen(on) {
+  graficasOpen = on;
+  document.getElementById('graficas-panel').classList.toggle('gp-on', on);
+  document.getElementById('graficas-btn').textContent = on ? '🌐 Blobs' : '📊 Gráficas';
+  if (on) {
+    gpGotoSlide(gpCurrentSlide);
+  } else {
+    cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
+    _gpStopAuto();
+  }
+}
+
+document.getElementById('graficas-btn').onclick = () => {
+  if (!graficasOpen) { stopPlay(); stopExplore(); }
+  gpSetOpen(!graficasOpen);
+};
+document.getElementById('gp-close-btn').onclick = () => gpSetOpen(false);
+
+// ── Auto-slide ────────────────────────────────────────────────
+function _gpStopAuto() {
+  clearTimeout(gpAutoTimer); gpAutoTimer = null;
+  gpAutoPlaying = false;
+  const b = document.getElementById('gp-auto-btn');
+  if (b) b.textContent = '▶ Auto';
+}
+
+function _gpScheduleAuto() {
+  if (!gpAutoPlaying) return;
+  const dur = gpCurrentSlide === 0 ? 10500 : 5500;
+  gpAutoTimer = setTimeout(() => {
+    if (!gpAutoPlaying) return;
+    gpGotoSlide((gpCurrentSlide + 1) % 4);
+    _gpScheduleAuto();
+  }, dur);
+}
+
+document.getElementById('gp-auto-btn').onclick = () => {
+  // Detener explore si está activo (sin cerrar el panel)
+  if (exploring) {
+    exploring = false;
+    clearInterval(exploreTimer); clearTimeout(exploreTimer); exploreTimer = null;
+    _syncExploreBtns();
+    document.getElementById('next-phase-btn').style.display  = 'none';
+    document.getElementById('phase-indicator').style.display = 'none';
+  }
+  gpAutoPlaying = !gpAutoPlaying;
+  document.getElementById('gp-auto-btn').textContent = gpAutoPlaying ? '⏸ Auto' : '▶ Auto';
+  if (gpAutoPlaying) _gpScheduleAuto();
+  else { clearTimeout(gpAutoTimer); gpAutoTimer = null; }
+};
+
+// ── Explorar mirror dentro del panel ─────────────────────────
+document.getElementById('gp-explore-btn2').onclick = () => {
+  exploring ? stopExplore() : startExplore();
+};
+
+// ── Navegación de slides ──────────────────────────────────────
+document.getElementById('gp-prev').onclick = () => gpGotoSlide((gpCurrentSlide + 3) % 4);
+document.getElementById('gp-next').onclick = () => gpGotoSlide((gpCurrentSlide + 1) % 4);
+document.querySelectorAll('.gp-dot').forEach(d => d.onclick = () => gpGotoSlide(+d.dataset.i));
+
+function gpGotoSlide(idx) {
+  cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
+  clearTimeout(gpAutoTimer);
+
+  gpCurrentSlide = idx;
+  document.querySelectorAll('.gp-slide').forEach((s, i) => s.classList.toggle('active', i === idx));
+  document.querySelectorAll('#gp-dots .gp-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+
+  if (idx === 0) {
+    gpStartLineAnim();
+  } else {
+    const MAP = {
+      1: ['gp-bars-uso',    ALPHA_USO],
+      2: ['gp-bars-equipo', ALPHA_EQUIPO],
+      3: ['gp-bars-aprend', ALPHA_APREND],
+    };
+    const [cid, data] = MAP[idx];
+    gpBuildBigBars(cid, data);
+    setTimeout(() => gpAnimateBigBars(cid), 80);
+  }
+
+  if (gpAutoPlaying) _gpScheduleAuto();
+}
+
+// ── Slides de blobs ───────────────────────────────────────────
+const GP_BLOB_N = 20;
+
+function gpBuildBlobSlide(id, data) {
+  const con = document.getElementById(id);
+  if (!con) return;
+  con.innerHTML = data.map((d, ci) => {
+    const nOn  = Math.round(d.pct / 100 * GP_BLOB_N);
+    const cells = Array.from({length: GP_BLOB_N}, (_, i) =>
+      `<div class="gp-blob-cell${i < nOn ? ' will-on' : ''}"></div>`
+    ).join('');
+    return `<div class="gp-blob-col" style="--blob-col:${d.color}">
+      <div class="gp-blob-header">
+        ${d.icon ? `<div class="gp-blob-icon">${d.icon}</div>` : ''}
+        <div class="gp-blob-lbl">${d.label}</div>
+      </div>
+      <div class="gp-blob-cells">${cells}</div>
+      <div class="gp-blob-pct" style="opacity:0">${d.pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function gpAnimateBlobSlide(id, data) {
+  const con = document.getElementById(id);
+  if (!con) return;
+
+  // ── Calcular tamaño óptimo según espacio real disponible ──────
+  const firstCells = con.querySelector('.gp-blob-cells');
+  if (firstCells) {
+    const r = firstCells.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      const COLS = 4, ROWS = 5, GAP = 12;
+      const colW    = (r.width  - (COLS - 1) * GAP) / COLS;   // ancho por celda
+      const rowH    = (r.height - (ROWS - 1) * GAP) / ROWS;   // alto por celda
+      const blobH   = Math.min(colW / 0.72, rowH * 0.88);     // restringido por ambas dimensiones
+      const blobW   = Math.round(blobH * 0.72);
+      con.querySelectorAll('.gp-blob-cell').forEach(c => {
+        c.style.width  = blobW + 'px';
+        c.style.height = Math.round(blobH) + 'px';
+      });
+    }
+  }
+
+  // ── Animar ────────────────────────────────────────────────────
+  con.querySelectorAll('.gp-blob-col').forEach((col, ci) => {
+    const allCells = col.querySelectorAll('.gp-blob-cell');
+    const pctEl    = col.querySelector('.gp-blob-pct');
+    allCells.forEach(c => c.classList.remove('on'));
+    if (pctEl) { pctEl.style.transition = 'none'; pctEl.style.opacity = '0'; }
+    let delay = 80 + ci * 50;
+    allCells.forEach(cell => {
+      if (cell.classList.contains('will-on')) {
+        setTimeout(() => cell.classList.add('on'), delay);
+        delay += 48;
+      }
+    });
+    if (pctEl) setTimeout(() => {
+      pctEl.style.transition = 'opacity 0.4s';
+      pctEl.style.opacity = '1';
+    }, delay + 80);
+  });
+}
+
+// ── Gráfica de líneas: animación suave con rAF ───────────────
+function gpBuildLineChart() {
+  const con = document.getElementById('gp-line-container');
+  if (!con) return;
+  const W = 820, H = 400;
+  const ml = 52, mr = 116, mt = 44, mb = 40;
+  const pw = W - ml - mr, ph = H - mt - mb;
+  const xOf = i => ml + i * pw / (YEARS.length - 1);
+  const yOf = p => mt + ph * (1 - p / 100);
+  const sc  = SCHEMES[0];
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:100%">`;
+
+  [0,20,40,60,80,100].forEach(v => {
+    const y = yOf(v).toFixed(1);
+    s += `<line x1="${ml}" y1="${y}" x2="${ml+pw}" y2="${y}" stroke="#E8ECF2" stroke-width="1"/>`;
+    s += `<text x="${ml-9}" y="${(+y+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#94A3B8" font-family="Arial">${v}%</text>`;
+  });
+
+  YEARS.forEach((yr, i) =>
+    s += `<text id="gpxl-${i}" x="${xOf(i).toFixed(1)}" y="${(mt+ph+20).toFixed(1)}" text-anchor="middle" font-size="11" fill="#64748B" font-family="Arial" opacity="0.2">${yr}</text>`
+  );
+
+  s += `<line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="#CBD5E1" stroke-width="1.5"/>`;
+  s += `<line x1="${ml}" y1="${mt+ph}" x2="${ml+pw}" y2="${mt+ph}" stroke="#CBD5E1" stroke-width="1.5"/>`;
+
+  Object.entries(GP_EVENTS).forEach(([k, ev]) => {
+    const ex = xOf(+k).toFixed(1);
+    s += `<g id="gpevt-${k}" style="display:none">`;
+    s += `<line x1="${ex}" y1="${mt}" x2="${ex}" y2="${mt+ph}" stroke="${ev.color}" stroke-width="1.8" stroke-dasharray="5,4" opacity="0.75"/>`;
+    ev.label.forEach((ln, li) =>
+      s += `<text x="${ex}" y="${(10+li*14).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="${ev.color}" font-family="Arial" font-weight="bold">${ln}</text>`
+    );
+    s += `</g>`;
+  });
+
+  sc.groups.forEach((_, gi) => s += `<g id="gppast-${gi}"></g>`);
+
+  sc.groups.forEach((_, gi) =>
+    s += `<path id="gppath-${gi}" fill="none" stroke="${sc.colors[gi]}" stroke-width="${gi===5?3.2:2.2}" stroke-linecap="round" stroke-linejoin="round" d=""/>`
+  );
+
+  sc.groups.forEach((_, gi) =>
+    s += `<circle id="gpcur-${gi}" r="${gi===5?5.5:4.5}" fill="${sc.colors[gi]}" stroke="white" stroke-width="1.5" opacity="0" cx="0" cy="0"/>`
+  );
+
+  sc.groups.forEach((_, gi) => {
+    s += `<text id="gplpct-${gi}" font-size="${gi===5?12:10.5}" font-weight="bold" fill="${sc.colors[gi]}" font-family="Arial" opacity="0"> </text>`;
+    s += `<text id="gplnm-${gi}"  font-size="9"                  fill="${sc.colors[gi]}" font-family="Arial" opacity="0"> </text>`;
+  });
+
+  s += '</svg>';
+  con.innerHTML = s;
+
+  _gpRefs = {
+    xOf, yOf, mt, ph, sc,
+    xLbls:      YEARS.map((_, i)  => document.getElementById(`gpxl-${i}`)),
+    evtGrps:    Object.fromEntries(Object.keys(GP_EVENTS).map(k => [k, document.getElementById(`gpevt-${k}`)])),
+    pastGrps:   sc.groups.map((_, gi) => document.getElementById(`gppast-${gi}`)),
+    paths:      sc.groups.map((_, gi) => document.getElementById(`gppath-${gi}`)),
+    curCs:      sc.groups.map((_, gi) => document.getElementById(`gpcur-${gi}`)),
+    pctLbls:    sc.groups.map((_, gi) => document.getElementById(`gplpct-${gi}`)),
+    nmLbls:     sc.groups.map((_, gi) => document.getElementById(`gplnm-${gi}`)),
+    genPts:     sc.groups.map(gen =>
+      sc.pct[gen].map((p, i) => p > 0 ? { p, i, x: xOf(i), y: yOf(p) } : null).filter(Boolean)
+    ),
+    pastAdded:  sc.groups.map(() => new Set()),
+  };
+}
+
+function gpLineFrame() {
+  if (!_gpRefs) return;
+  const { xOf, yOf, mt, ph, sc, xLbls, evtGrps, pastGrps, paths, curCs, pctLbls, nmLbls, genPts, pastAdded } = _gpRefs;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  gpLineProgress = Math.min(YEARS.length - 1, gpLineProgress + 8 / (9.5 * 60));
+  const step = Math.floor(gpLineProgress);
+  const frac = gpLineProgress - step;
+
+  xLbls.forEach((t, i) => {
+    t.setAttribute('opacity', (i < step ? 0.45 : i === step ? 1 : 0.2).toFixed(2));
+    t.setAttribute('font-weight', i === step ? 'bold' : 'normal');
+  });
+
+  Object.entries(evtGrps).forEach(([k, g]) => {
+    if (g) g.style.display = +k <= step ? '' : 'none';
+  });
+
+  const labelInfo = [];
+
+  sc.groups.forEach((gen, gi) => {
+    const pts    = genPts[gi];
+    const visPts = pts.filter(pt => pt.i <= step);
+    const nextPt = pts.find(pt => pt.i === step + 1);
+
+    if (!visPts.length) {
+      paths[gi].setAttribute('d', '');
+      curCs[gi].setAttribute('opacity', '0');
+      return;
+    }
+
+    const lv = visPts[visPts.length - 1];
+    let curX, curY, curP;
+    if (nextPt && frac > 0) {
+      curX = lv.x + (nextPt.x - lv.x) * frac;
+      curY = lv.y + (nextPt.y - lv.y) * frac;
+      curP = lv.p + (nextPt.p - lv.p) * frac;
+    } else { curX = lv.x; curY = lv.y; curP = lv.p; }
+
+    const allPts = [...visPts, ...(nextPt && frac > 0 ? [{ x: curX, y: curY }] : [])];
+    paths[gi].setAttribute('d',
+      allPts.map((pt, k) => `${k?'L':'M'}${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join('')
+    );
+
+    visPts.forEach(pt => {
+      if (pastAdded[gi].has(pt.i)) return;
+      pastAdded[gi].add(pt.i);
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', pt.x.toFixed(1)); c.setAttribute('cy', pt.y.toFixed(1));
+      c.setAttribute('r',  gi===5 ? 3.5 : 2.8);
+      c.setAttribute('fill', sc.colors[gi]); c.setAttribute('stroke', 'white');
+      c.setAttribute('stroke-width', '1.5'); c.setAttribute('opacity', '0.38');
+      pastGrps[gi].appendChild(c);
+    });
+
+    curCs[gi].setAttribute('cx', curX.toFixed(1));
+    curCs[gi].setAttribute('cy', curY.toFixed(1));
+    curCs[gi].setAttribute('opacity', '1');
+
+    labelInfo.push({ gi, x: curX + 11, y: curY, pct: curP.toFixed(1) + '%' });
+  });
+
+  labelInfo.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labelInfo.length; i++) {
+    if (labelInfo[i].y - labelInfo[i-1].y < 22) labelInfo[i].y = labelInfo[i-1].y + 22;
+  }
+  for (let i = labelInfo.length - 2; i >= 0; i--) {
+    if (labelInfo[i+1].y - labelInfo[i].y < 22) labelInfo[i].y = labelInfo[i+1].y - 22;
+  }
+  labelInfo.forEach(lp => { lp.y = Math.max(mt + 4, Math.min(mt + ph - 14, lp.y)); });
+
+  const activeGis = new Set(labelInfo.map(l => l.gi));
+  sc.groups.forEach((_, gi) => {
+    if (!activeGis.has(gi)) {
+      pctLbls[gi].setAttribute('opacity', '0');
+      nmLbls[gi].setAttribute('opacity', '0');
+    }
+  });
+  labelInfo.forEach(lp => {
+    const nm = sc.groups[lp.gi] === 'Baby Boomers' ? 'Baby B.' : sc.groups[lp.gi];
+    pctLbls[lp.gi].setAttribute('x', lp.x.toFixed(1)); pctLbls[lp.gi].setAttribute('y', (lp.y + 4).toFixed(1));
+    pctLbls[lp.gi].setAttribute('opacity', '1');        pctLbls[lp.gi].textContent = lp.pct;
+    nmLbls[lp.gi].setAttribute('x',  lp.x.toFixed(1)); nmLbls[lp.gi].setAttribute('y', (lp.y + 15).toFixed(1));
+    nmLbls[lp.gi].setAttribute('opacity', '0.82');      nmLbls[lp.gi].textContent = nm;
+  });
+
+  if (gpLineProgress < YEARS.length - 1) gpLineRAF = requestAnimationFrame(gpLineFrame);
+}
+
+function gpStartLineAnim() {
+  cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
+  gpLineProgress = 0;
+  _gpRefs = null;
+  gpBuildLineChart();
+  gpLineRAF = requestAnimationFrame(gpLineFrame);
+}
+
+// ── Barras grandes (full-screen) ──────────────────────────────
+function gpBuildBigBars(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const max = Math.max(...items.map(x => x.pct));
+  el.innerHTML = items.map((item, i) => `
+    <div class="gp-bar-big-col">
+      <div class="gp-bar-big-track">
+        <div class="gp-bar-big-bar">
+          <div class="gp-bar-big-val" id="gpbv-${containerId}-${i}">${item.pct.toFixed(1)}%</div>
+          <div class="gp-bar-big-fill" style="background:${item.color}"
+               data-pct="${Math.max(1, Math.round((item.pct/max)*100))}"></div>
+        </div>
+      </div>
+      <div class="gp-bar-big-lbl">${item.label}</div>
+    </div>`).join('');
+}
+
+function gpAnimateBigBars(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  // Leer la altura real del track (ya renderizado) para calcular px
+  const trackH = el.querySelector('.gp-bar-big-track')?.clientHeight || 400;
+  // Reservar espacio para el val label encima de cada barra (texto + margen)
+  const valReserve = 56;
+  const fillMax = trackH - valReserve;
+  el.querySelectorAll('.gp-bar-big-fill').forEach((bar, i) => {
+    setTimeout(() => {
+      bar.style.height = Math.round(fillMax * parseInt(bar.dataset.pct) / 100) + 'px';
+      setTimeout(() => {
+        const v = document.getElementById(`gpbv-${containerId}-${i}`);
+        if (v) v.style.opacity = '1';
+      }, 950);
+    }, i * 130);
+  });
+}
+
+// ─── Explorar: 2 fases en loop — Blobs → Slides → Blobs ──────
+const EXPLORE_SCHEMES = [0, 1, 2];
+let exploring = false, exploreTimer = null, exploreSchI = 0, explorePhase = 0;
+
+function _phSet(ph) {
+  explorePhase = ph;
+  [0,1,2].forEach(i => document.getElementById('ph'+i)?.classList.toggle('active', i===ph));
+}
+
+function _syncExploreBtns() {
+  const lbl = exploring ? '⏹ Detener' : '◎ Explorar';
+  document.getElementById('explore-btn').textContent = lbl;
+  document.getElementById('gp-explore-btn2').textContent = lbl;
+  document.getElementById('ap-explore-btn').textContent = lbl;
+}
+
+document.getElementById('explore-btn').onclick = () => { exploring ? stopExplore() : startExplore(); };
+document.getElementById('next-phase-btn').onclick = () => {
+  clearInterval(exploreTimer); clearTimeout(exploreTimer); exploreTimer = null;
+  if (!exploring) return;
+  if      (explorePhase === 0) _exGraficasFrom(0);
+  else if (explorePhase === 1) _exAlpha(0);
+  else                         _exBlobs();
+};
+
+function startExplore() {
+  stopPlay();
+  exploring   = true;
+  exploreSchI = 0;
+  _syncExploreBtns();
+  document.getElementById('next-phase-btn').style.display  = '';
+  document.getElementById('phase-indicator').style.display = 'flex';
+  _gpStopAuto();
+  _apStopAuto();
+  if (alphaOpen) {
+    _exAlpha(apCurrentSlide);
+  } else if (graficasOpen) {
+    _exGraficasFrom(gpCurrentSlide);
+  } else {
+    _exBlobs();
+  }
+}
+
+function stopExplore() {
+  exploring = false;
+  clearInterval(exploreTimer); clearTimeout(exploreTimer); exploreTimer = null;
+  cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
+  _syncExploreBtns();
+  document.getElementById('next-phase-btn').style.display  = 'none';
+  document.getElementById('phase-indicator').style.display = 'none';
+}
+
+// Fase 0: gen → age → sex, año a año
+function _exBlobs() {
+  _phSet(0);
+  document.getElementById('next-phase-btn').textContent = '→ Gráficas';
+  if (graficasOpen) gpSetOpen(false);
+  const sel = document.getElementById('sch-sel');
+  sel.value = EXPLORE_SCHEMES[0];
+  applyScheme(EXPLORE_SCHEMES[0]);
+  setYear(0);
+  exploreSchI = 0;
+  exploreTimer = setInterval(() => {
+    if (!exploring) return;
+    if (yrIdx < YEARS.length - 1) {
+      setYear(yrIdx + 1);
+    } else {
+      exploreSchI++;
+      if (exploreSchI < EXPLORE_SCHEMES.length) {
+        sel.value = EXPLORE_SCHEMES[exploreSchI];
+        applyScheme(EXPLORE_SCHEMES[exploreSchI]);
+        setYear(0);
+      } else {
+        clearInterval(exploreTimer); exploreTimer = null;
+        if (exploring) _exGraficasFrom(0);
+      }
+    }
+  }, 1000);
+}
+
+// Fase 1: recorre slides desde startSlide en adelante
+const GP_SLIDE_DUR = [10500, 5500, 5500, 5500];
+
+function _exGraficasFrom(startSlide) {
+  _phSet(1);
+  document.getElementById('next-phase-btn').textContent = '→ Blobs';
+  if (!graficasOpen) gpSetOpen(true);
+  if (gpCurrentSlide !== startSlide) gpGotoSlide(startSlide);
+
+  let si = startSlide;
+  function _nxt() {
+    si++;
+    if (!exploring) return;
+    if (si < 4) {
+      gpGotoSlide(si);
+      exploreTimer = setTimeout(_nxt, GP_SLIDE_DUR[si]);
+    } else {
+      gpSetOpen(false);
+      _exAlpha(0);
+    }
+  }
+  exploreTimer = setTimeout(_nxt, GP_SLIDE_DUR[startSlide]);
+}
+
+function _exGraficas() { _exGraficasFrom(0); }
+
+// Fase 2: recorre slides de Alpha
+const AP_SLIDE_DUR = [5500, 5500, 5500];
+
+function _exAlpha(startSlide = 0) {
+  _phSet(2);
+  document.getElementById('next-phase-btn').textContent = '→ Blobs';
+  if (graficasOpen) gpSetOpen(false);
+  if (!alphaOpen) apSetOpen(true);
+  if (apCurrentSlide !== startSlide) apGotoSlide(startSlide);
+
+  let si = startSlide;
+  function _nxt() {
+    si++;
+    if (!exploring) return;
+    if (si < 3) {
+      apGotoSlide(si);
+      exploreTimer = setTimeout(_nxt, AP_SLIDE_DUR[si]);
+    } else {
+      apSetOpen(false);
+      _exBlobs();
+    }
+  }
+  exploreTimer = setTimeout(_nxt, AP_SLIDE_DUR[startSlide]);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════════════════
+const ray     = new THREE.Raycaster();
+const mou     = new THREE.Vector2();
+const tip     = document.getElementById('tip');
+const bodies  = blobs.map(b => b.g.children[0]);
+const bMap    = new Map(blobs.map(b => [b.g.children[0], b]));
+
+canvas.addEventListener('mousemove', e => {
+  mou.x =  (e.clientX / innerWidth)  * 2 - 1;
+  mou.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mou, camera);
+  const hit = ray.intersectObjects(bodies)[0];
+  if (hit) {
+    const b  = bMap.get(hit.object);
+    const sc = SCHEMES[schIdx];
+    tip.style.cssText = `display:block;left:${e.clientX+14}px;top:${e.clientY-10}px`;
+    if (sc.id === 'none') {
+      const genSc = SCHEMES[0];
+      const nm = genSc.groups[b.gi];
+      tip.innerHTML = `<span style="color:${genSc.colors[b.gi]};font-weight:700">${nm}</span>`;
+    } else {
+      const gi   = gi_for(b, sc);
+      const nm   = sc.groups[gi];
+      const pc   = (sc.pct[nm]?.[yrIdx] ?? 0).toFixed(1);
+      const nVis = sc.n   ? (sc.n[nm]?.[yrIdx]   ?? N) : N;
+      const popM = sc.pop ? (sc.pop[nm]?.[yrIdx]  ?? 0) : 0;
+      const ppb  = nVis > 0 ? `<br><span style="color:#94A3B8">≈ ${(popM/nVis).toFixed(1)}M hab./figura</span>` : '';
+      tip.innerHTML = `<span style="color:${sc.colors[gi]};font-weight:700">${nm}</span><br>
+        <b>${pc}%</b> usa internet · ${YEARS[yrIdx]}${ppb}`;
+    }
+    canvas.style.cursor = 'pointer';
+  } else {
+    tip.style.display = 'none';
+    canvas.style.cursor = 'default';
+  }
+});
+canvas.addEventListener('mouseleave', () => tip.style.display = 'none');
+
+// Soporte táctil — tap sobre un blob muestra su info
+let _tipTimeout = null;
+function _handleTouch(e) {
+  const t = e.touches[0];
+  if (!t) return;
+  mou.x =  (t.clientX / innerWidth)  * 2 - 1;
+  mou.y = -(t.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mou, camera);
+  const hit = ray.intersectObjects(bodies)[0];
+  if (hit) {
+    const b  = bMap.get(hit.object);
+    const sc = SCHEMES[schIdx];
+    const tx = Math.min(t.clientX + 14, innerWidth  - 170);
+    const ty = Math.max(t.clientY - 50, 10);
+    tip.style.cssText = `display:block;left:${tx}px;top:${ty}px`;
+    if (sc.id === 'none') {
+      const gSc = SCHEMES[0];
+      tip.innerHTML = `<span style="color:${gSc.colors[b.gi]};font-weight:700">${gSc.groups[b.gi]}</span>`;
+    } else {
+      const gi  = gi_for(b, sc);
+      const nm  = sc.groups[gi];
+      const pc  = (sc.pct[nm]?.[yrIdx] ?? 0).toFixed(1);
+      tip.innerHTML = `<span style="color:${sc.colors[gi]};font-weight:700">${nm}</span><br><b>${pc}%</b> usa internet · ${YEARS[yrIdx]}`;
+    }
+    clearTimeout(_tipTimeout);
+    _tipTimeout = setTimeout(() => tip.style.display = 'none', 2200);
+    e.preventDefault();
+  }
+}
+canvas.addEventListener('touchstart', _handleTouch, { passive: false });
+canvas.addEventListener('touchmove',  _handleTouch, { passive: false });
+
+// ═══════════════════════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════════════════════
+function onResize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  // En retrato (móvil), alejar la cámara para ver todos los blobs
+  if (camera.aspect < 1) {
+    camera.fov = 72;
+    camera.position.set(0, 20, 28);
+  } else {
+    camera.fov = 42;
+    camera.position.set(0, 13, 17);
+  }
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ═══════════════════════════════════════════════════════════════
+// PANEL ALPHA
+// ═══════════════════════════════════════════════════════════════
+let alphaOpen      = false;
+let apCurrentSlide = 0;
+let apAutoPlaying  = false;
+let apAutoTimer    = null;
+
+const AP_DATA = [
+  ['ap-blobs-uso',    ALPHA_USO],
+  ['ap-blobs-equipo', ALPHA_EQUIPO],
+  ['ap-blobs-aprend', ALPHA_APREND],
+];
+
+function _apStopAuto() {
+  clearTimeout(apAutoTimer); apAutoTimer = null;
+  apAutoPlaying = false;
+  const b = document.getElementById('ap-auto-btn');
+  if (b) b.textContent = '▶ Auto';
+}
+
+function _apScheduleAuto() {
+  if (!apAutoPlaying) return;
+  apAutoTimer = setTimeout(() => {
+    if (!apAutoPlaying) return;
+    apGotoSlide((apCurrentSlide + 1) % 3);
+    _apScheduleAuto();
+  }, 5500);
+}
+
+function apSetOpen(on) {
+  alphaOpen = on;
+  document.getElementById('alpha-panel').classList.toggle('ap-on', on);
+  document.getElementById('alpha-btn').textContent = on ? '🫧 Cerrar' : '🫧 Alpha';
+  if (on) {
+    apGotoSlide(apCurrentSlide);
+  } else {
+    _apStopAuto();
+  }
+}
+
+function apGotoSlide(idx) {
+  clearTimeout(apAutoTimer);
+  apCurrentSlide = idx;
+  document.querySelectorAll('.ap-slide').forEach((s, i) => s.classList.toggle('active', i === idx));
+  document.querySelectorAll('#ap-dots .gp-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  const [cid, data] = AP_DATA[idx];
+  gpBuildBlobSlide(cid, data);
+  setTimeout(() => gpAnimateBlobSlide(cid, data), 80);
+  if (apAutoPlaying) _apScheduleAuto();
+}
+
+document.getElementById('alpha-btn').onclick = () => {
+  stopPlay(); stopExplore();
+  apSetOpen(!alphaOpen);
+};
+document.getElementById('ap-close-btn').onclick = () => apSetOpen(false);
+document.getElementById('ap-prev').onclick = () => apGotoSlide((apCurrentSlide + 2) % 3);
+document.getElementById('ap-next').onclick = () => apGotoSlide((apCurrentSlide + 1) % 3);
+document.querySelectorAll('#ap-dots .gp-dot').forEach(d => d.onclick = () => apGotoSlide(+d.dataset.ap));
+
+document.getElementById('ap-auto-btn').onclick = () => {
+  apAutoPlaying = !apAutoPlaying;
+  document.getElementById('ap-auto-btn').textContent = apAutoPlaying ? '⏸ Auto' : '▶ Auto';
+  if (apAutoPlaying) _apScheduleAuto();
+  else { clearTimeout(apAutoTimer); apAutoTimer = null; }
+};
+
+document.getElementById('ap-explore-btn').onclick = () => {
+  exploring ? stopExplore() : startExplore();
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════════
+const clock = new THREE.Clock();
+const _tc   = new THREE.Color();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  if (SCHEMES[schIdx].id === 'none') {
+    const xLim = camera.aspect < 1 ? 9 : 17;
+    const zLim = camera.aspect < 1 ? 7 : 10;
+    blobs.forEach(b => {
+      if (!b.wanderAt || t >= b.wanderAt) {
+        b.tx = Math.max(-xLim, Math.min(xLim, b.tx + (Math.random()-0.5)*6));
+        b.tz = Math.max(-zLim, Math.min(zLim, b.tz + (Math.random()-0.5)*4));
+        b.ty = 0.5;
+        b.wanderAt = t + 4 + Math.random() * 5;
+      }
+    });
+  }
+
+  blobs.forEach(b => {
+    b.scaleNow += (b.scaleTgt - b.scaleNow) * 0.09;
+    if (b.scaleNow < 0.01) { b.g.visible = false; return; }
+    b.g.visible = true;
+    b.g.scale.setScalar(b.scaleNow);
+
+    b.px += (b.tx - b.px) * 0.065;
+    b.py += (b.ty - b.py) * 0.065;
+    b.pz += (b.tz - b.pz) * 0.065;
+
+    const bob = Math.sin(t * 1.4 + b.phase) * 0.055;
+    const swY = Math.sin(t * 0.6 + b.phase) * 0.07;
+    const swZ = Math.sin(t * 0.9 + b.phase + 1.2) * 0.03;
+
+    b.g.position.set(b.px, b.py + bob, b.pz);
+    b.g.rotation.y = swY;
+    b.g.rotation.z = swZ;
+
+    _tc.copy(b.cur).lerp(b.tgt, 0.07);
+    b.cur.copy(_tc);
+    b.g.userData.mat.color.copy(_tc);
+  });
+
+  posLabels();
+  renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+applyScheme(3); // Sin agrupar por defecto
+setYear(YEARS.length - 1);
+animate();
+</script>
+</body>
+</html>
