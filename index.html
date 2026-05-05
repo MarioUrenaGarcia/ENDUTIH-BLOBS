@@ -980,11 +980,12 @@ const ALPHA_APREND = [
 // ═══════════════════════════════════════════════════════════════
 // PANEL GRÁFICAS — SISTEMA DE SLIDES
 // ═══════════════════════════════════════════════════════════════
-let graficasOpen   = false;
-let gpCurrentSlide = 0;
-let gpLineProgress = 0;
-let gpLineRAF      = null;
-let _gpRefs        = null;
+let graficasOpen    = false;
+let gpCurrentSlide  = 0;
+let gpLineProgress  = 0;
+let gpLineRAF       = null;
+let gpLineStartTime = null;
+let _gpRefs         = null;
 let gpAutoPlaying  = false;
 let gpAutoTimer    = null;
 
@@ -1218,7 +1219,9 @@ function gpLineFrame() {
   const { xOf, yOf, mt, ph, sc, xLbls, evtGrps, pastGrps, paths, curCs, pctLbls, nmLbls, genPts, pastAdded } = _gpRefs;
   const NS = 'http://www.w3.org/2000/svg';
 
-  gpLineProgress = Math.min(YEARS.length - 1, gpLineProgress + 8 / (9.5 * 60));
+  if (gpLineStartTime === null) gpLineStartTime = performance.now();
+  const elapsed = performance.now() - gpLineStartTime;
+  gpLineProgress = Math.min(YEARS.length - 1, (elapsed / 9500) * (YEARS.length - 1));
   const step = Math.floor(gpLineProgress);
   const frac = gpLineProgress - step;
 
@@ -1304,7 +1307,8 @@ function gpLineFrame() {
 
 function gpStartLineAnim() {
   cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
-  gpLineProgress = 0;
+  gpLineProgress  = 0;
+  gpLineStartTime = null;
   _gpRefs = null;
   gpBuildLineChart();
   gpLineRAF = requestAnimationFrame(gpLineFrame);
@@ -1393,7 +1397,6 @@ function startExplore() {
 function stopExplore() {
   exploring = false;
   clearInterval(exploreTimer); clearTimeout(exploreTimer); exploreTimer = null;
-  cancelAnimationFrame(gpLineRAF); gpLineRAF = null;
   _syncExploreBtns();
   document.getElementById('next-phase-btn').style.display  = 'none';
   document.getElementById('phase-indicator').style.display = 'none';
