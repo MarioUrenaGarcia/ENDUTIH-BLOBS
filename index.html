@@ -1390,7 +1390,8 @@ function startExplore() {
   } else if (graficasOpen) {
     _exGraficasFrom(gpCurrentSlide);
   } else {
-    _exBlobs();
+    const schI = EXPLORE_SCHEMES.indexOf(schIdx);
+    _exBlobs(schI >= 0 ? schI : 0, schI >= 0 ? yrIdx : 0);
   }
 }
 
@@ -1403,15 +1404,15 @@ function stopExplore() {
 }
 
 // Fase 0: gen → age → sex, año a año
-function _exBlobs() {
+function _exBlobs(startSchI = 0, startYi = 0) {
   _phSet(0);
   document.getElementById('next-phase-btn').textContent = '→ Gráficas';
   if (graficasOpen) gpSetOpen(false);
   const sel = document.getElementById('sch-sel');
-  sel.value = EXPLORE_SCHEMES[0];
-  applyScheme(EXPLORE_SCHEMES[0]);
-  setYear(0);
-  exploreSchI = 0;
+  sel.value = EXPLORE_SCHEMES[startSchI];
+  applyScheme(EXPLORE_SCHEMES[startSchI]);
+  setYear(startYi);
+  exploreSchI = startSchI;
   exploreTimer = setInterval(() => {
     if (!exploring) return;
     if (yrIdx < YEARS.length - 1) {
